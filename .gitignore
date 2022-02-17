@@ -133,3 +133,6 @@ dmypy.json
 .idea/BirdsOnLakes.iml
 .idea/inspectionProfiles/profiles_settings.xml
 .idea/inspectionProfiles/Project_Default.xml
+/images/
+/images_crop/
+/camera_1_seed_1001.zip

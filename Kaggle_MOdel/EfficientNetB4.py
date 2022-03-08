@@ -1,8 +1,8 @@
-import tensorflow as tf
-from tensorflow.keras.applications import efficientnet
-import pandas as pd
-from PIL import Image
 import numpy as np
+import pandas as pd
+import tensorflow as tf
+from PIL import Image
+from tensorflow.keras.applications import efficientnet
 
 
 # data loader
@@ -53,8 +53,8 @@ if __name__ == "__main__":
     paths_val = df_val["filepaths"]
     print("Loaded data successfully")
 
-    model = efficientnet.EfficientNetB0(include_top=False,
-                                        weights='imagenet'
+    model = efficientnet.EfficientNetB0(include_top=True,
+                                        weights='imagenet',
                                         )
     callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
     model.compile(tf.keras.optimizers.SGD(), loss='mse')

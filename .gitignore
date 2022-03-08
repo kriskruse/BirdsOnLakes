@@ -136,3 +136,12 @@ dmypy.json
 /images/
 /images_crop/
 /camera_1_seed_1001.zip
+/Kaggle_MOdel/images to test/
+/Kaggle_MOdel/test/
+/Kaggle_MOdel/train/
+/Kaggle_MOdel/valid/
+/Kaggle_MOdel/archive.zip
+/Kaggle_MOdel/birds.csv
+/Kaggle_MOdel/birds latin names.csv
+/Kaggle_MOdel/class_dict.csv
+.idea/csv-plugin.xml

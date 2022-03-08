@@ -1,9 +1,12 @@
 import numpy as np
+import os
 import pandas as pd
 import tensorflow as tf
 from PIL import Image
 from tensorflow.keras.applications import efficientnet
 
+# Force CPU use
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 # data loader
 def loadData(csv_path):
@@ -69,6 +72,17 @@ if __name__ == "__main__":
     Y_val = np.array(df_val["class index"])
     print("Image data converted successfully")
 
+    # X_train = tf.data.Dataset.batch(X_train, batch_size=100)
+    # Y_train = tf.data.Dataset.batch(Y_train, batch_size=100)
+    # X_test = tf.data.Dataset.batch(X_test, batch_size=100)
+    # Y_test = tf.data.Dataset.batch(Y_test, batch_size=100)
+    # X_val = tf.data.Dataset.batch(X_val, batch_size=100)
+    # Y_val = tf.data.Dataset.batch(Y_val, batch_size=100)
+    # print("Batching succesful")
+
     # TODO: figure out why the model doesn't want to fit
-    model_fit = model.fit(X_train, Y_train, epochs=25, callbacks=[callback])
+    model_fit = model.fit(X_train, Y_train, epochs=1, callbacks=[callback])
     model_fit.summary()
+
+
+

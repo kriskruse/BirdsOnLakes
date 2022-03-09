@@ -1,7 +1,10 @@
+import keras.optimizers
 import numpy as np
 import os
 import tensorflow as tf
-from tensorflow.keras.applications import efficientnet
+from keras.applications import efficientnet
+from keras.applications import efficientnet_v2
+
 
 
 def scheduler(epoch, lr):
@@ -36,22 +39,23 @@ def load_data(path, img_h, img_w, batch_size=10):
 
 if __name__ == "__main__":
     # params for tuning
-    epochs = 1      # how many iterations to train
+    epochs = 25  # how many iterations to train
+    batch = 25   # size of batches (This is dependent on GPU/CPU mem size, higher is faster but more mem is needed)
 
     # import the data as a dataset
     print("Train dataset: ")
-    train_ds = load_data("train", 224, 224)
+    train_ds = load_data("train", 224, 224, batch_size=batch)
     print("Test dataset: ")
-    test_ds = load_data("test", 224, 224)
+    test_ds = load_data("test", 224, 224, batch_size=batch)
     print("Validation dataset: ")
-    val_ds = load_data("valid", 224, 224)
+    val_ds = load_data("valid", 224, 224, batch_size=batch)
 
     # setup the model
-    model = efficientnet.EfficientNetB0(
-        include_top=True,
-        weights='imagenet')
+    model = efficientnet_v2.EfficientNetV2B0(
+        include_top=True, weights=None, classes=400)
     callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
-    model.compile(tf.keras.optimizers.SGD(), loss='mse')
+    # model.compile(tf.keras.optimizers.SGD(), loss='mse', metrics=['accuracy'])
+    model.compile(optimizer='adam', loss='mse', metrics=['accuracy'])
     print("Model assigned successfully")
 
     # we prefetch the data from cache
@@ -62,6 +66,7 @@ if __name__ == "__main__":
 
     # fit the model
     model_fit = model.fit(train_ds, epochs=epochs, callbacks=[callback])
-    model.summary()
-    evaluation = model.evaluate(test_ds, callbacks=[callback])
-    print(evaluation)
+
+    # eval the model and show the metrics
+    model_eval = model.evaluate(test_ds, callbacks=[callback], return_dict=True)
+    print(model_eval)

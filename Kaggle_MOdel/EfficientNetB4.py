@@ -82,7 +82,8 @@ if __name__ == "__main__":
 
     # TODO: figure out why the model doesn't want to fit
     model_fit = model.fit(X_train, Y_train, epochs=1, callbacks=[callback])
-    model_fit.summary()
-
+    model.summary()
+    evaluation = model.evaluate(X_test, Y_test, callbacks=[callback])
+    print(evaluation)
 
 

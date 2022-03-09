@@ -145,3 +145,5 @@ dmypy.json
 /Kaggle_MOdel/birds latin names.csv
 /Kaggle_MOdel/class_dict.csv
 .idea/csv-plugin.xml
+Kaggle_MOdel/.DS_Store
+.DS_Store

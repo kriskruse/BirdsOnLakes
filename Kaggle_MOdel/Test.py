@@ -1,53 +1,126 @@
 import numpy as np
-import os
-import PIL
-import PIL.Image
+
+np.random.seed(11)
+import pandas as pd
 import tensorflow as tf
+import tensorflow_addons as tfa
+import os
+from keras import layers, optimizers, losses, metrics, callbacks, initializers
+import matplotlib.pyplot as plt
+import keras
+from keras.applications.efficientnet_v2 import EfficientNetV2B3
+from IPython.display import clear_output
 
-batch_size = 10
-img_height = 224
-img_width = 224
-
-def scheduler(epoch, lr):
-    if epoch < 10:
-        return lr
-    else:
-        return lr * tf.math.exp(-0.1)
-
-
-train_ds = tf.keras.utils.image_dataset_from_directory(
-      "train",
-      image_size=(img_height, img_width),
-      batch_size=batch_size)
-
-test_ds = tf.keras.utils.image_dataset_from_directory(
-      "test",
-      image_size=(img_height, img_width),
-      batch_size=batch_size)
+plt.style.use("ggplot")
+# %matplotlib inline
+# import cv2
+from PIL import Image
 
 
-model = tf.keras.applications.efficientnet.EfficientNetB0(
-                                include_top=True,
-                                weights='imagenet'
-                                )
-callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
-model.compile(tf.keras.optimizers.SGD(), loss='mse')
-print("Model assigned successfully")
+class PlotLearning(keras.callbacks.Callback):
+    """
+    Callback to plot the learning curves of the model during training.
+    """
 
-normalization_layer = tf.keras.layers.Rescaling(1./255)
-normalized_ds = train_ds.map(lambda x, y: (normalization_layer(x), y))
-image_batch, labels_batch = next(iter(normalized_ds))
-first_image = image_batch[0]
-# Notice the pixel values are now in `[0,1]`.
-print(np.min(first_image), np.max(first_image))
+    def on_train_begin(self, logs={}):
+        self.metrics = {}
+        for metric in logs:
+            self.metrics[metric] = []
+
+    def on_epoch_end(self, epoch, logs={}):
+        # Storing metrics
+        for metric in logs:
+            if metric in self.metrics:
+                self.metrics[metric].append(logs.get(metric))
+            else:
+                self.metrics[metric] = [logs.get(metric)]
+
+        # Plotting
+        metrics = [x for x in logs if 'val' not in x]
+
+        f, axs = plt.subplots(1, len(metrics), figsize=(15, 5))
+        clear_output(wait=True)
+
+        for i, metric in enumerate(metrics):
+            axs[i].plot(range(1, epoch + 2),
+                        self.metrics[metric],
+                        label=metric)
+            if logs['val_' + metric]:
+                axs[i].plot(range(1, epoch + 2),
+                            self.metrics['val_' + metric],
+                            label='val_' + metric)
+
+            axs[i].legend()
+            axs[i].grid()
+
+        plt.tight_layout()
+        plt.show()
 
 
 
 
-AUTOTUNE = tf.data.AUTOTUNE
 
-train_ds = train_ds.cache().prefetch(buffer_size=AUTOTUNE)
-test_ds = test_ds.cache().prefetch(buffer_size=AUTOTUNE)
 
-model_fit = model.fit(train_ds, validation_data=test_ds, epochs=25, callbacks=[callback])
-model_fit.summary()
+
+
+TRAIN = 'train'
+VALID = 'valid'
+TEST = 'test'
+
+IMAGE_SIZE = (224, 224)
+
+train_data = tf.keras.preprocessing.image_dataset_from_directory(
+    TRAIN,
+    label_mode='categorical',
+    image_size=IMAGE_SIZE
+)
+class_names = train_data.class_names
+
+val_data = tf.keras.preprocessing.image_dataset_from_directory(
+    VALID,
+    label_mode='categorical',
+    image_size=IMAGE_SIZE,
+
+)
+test_data = tf.keras.preprocessing.image_dataset_from_directory(
+    TEST,
+    label_mode='categorical',
+    image_size=IMAGE_SIZE,
+    shuffle=False
+)
+
+train_data_pf = train_data.prefetch(buffer_size=tf.data.AUTOTUNE)
+val_data_pf = val_data.prefetch(buffer_size=tf.data.AUTOTUNE)
+test_data_pf = test_data.prefetch(buffer_size=tf.data.AUTOTUNE)
+
+inputs = layers.Input(shape=(224, 224, 3), name='input_layer')
+base_model = EfficientNetV2B3(include_top=False)
+base_model.trainable = False
+x = base_model(inputs, training=False)
+x = layers.GlobalAveragePooling2D(name='Global_Average_Pool_2D')(x)
+num_classes = len(train_data.class_names)
+outputs = layers.Dense(num_classes, activation='softmax', dtype=tf.float32, name="Output_layer")(x)
+model = keras.Model(inputs, outputs, name="model")
+
+model.summary()
+model.compile(
+    loss=keras.losses.categorical_crossentropy,
+    optimizer='adam',
+    metrics=['accuracy']
+)
+
+
+EPOCHS = 25
+history_of_model = model.fit(
+    train_data_pf,
+    epochs=EPOCHS,
+    steps_per_epoch=int((1/EPOCHS) * len(train_data_pf)),
+    validation_data=val_data_pf,
+    validation_steps=len(val_data_pf),
+    callbacks=[PlotLearning()]
+)
+
+model_0_result=model.evaluate(test_data_pf)
+print(model_0_result)
+
+

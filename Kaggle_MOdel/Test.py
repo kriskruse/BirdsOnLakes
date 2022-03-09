@@ -4,7 +4,7 @@ import PIL
 import PIL.Image
 import tensorflow as tf
 
-batch_size = 20000
+batch_size = 10
 img_height = 224
 img_width = 224
 

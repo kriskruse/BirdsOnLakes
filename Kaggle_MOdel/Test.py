@@ -57,12 +57,6 @@ class PlotLearning(keras.callbacks.Callback):
         plt.show()
 
 
-
-
-
-
-
-
 TRAIN = 'train'
 VALID = 'valid'
 TEST = 'test'
@@ -109,18 +103,15 @@ model.compile(
     metrics=['accuracy']
 )
 
-
 EPOCHS = 25
 history_of_model = model.fit(
     train_data_pf,
     epochs=EPOCHS,
-    steps_per_epoch=int((1/EPOCHS) * len(train_data_pf)),
+    steps_per_epoch=int((1 / EPOCHS) * len(train_data_pf)),
     validation_data=val_data_pf,
     validation_steps=len(val_data_pf),
     callbacks=[PlotLearning()]
 )
 
-model_0_result=model.evaluate(test_data_pf)
+model_0_result = model.evaluate(test_data_pf)
 print(model_0_result)
-
-

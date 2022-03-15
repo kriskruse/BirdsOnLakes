@@ -149,3 +149,8 @@ Kaggle_MOdel/.DS_Store
 .DS_Store
 /Object_Detection/input/IMAG0535.JPG
 /Object_Detection/input/IMAG0535.xml
+/Kaggle_MOdel/padded/
+Object_Detection/yolov3.weights
+Object_Detection/yolov3.cfg
+Object_Detection/yolov3.weights
+Object_Detection/yolov3.cfg

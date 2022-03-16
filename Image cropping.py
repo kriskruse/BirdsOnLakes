@@ -4,13 +4,13 @@ from PIL import Image
 from tqdm import tqdm
 
 
-for dir_number in tqdm(range(1,37), desc="Cropping images"):
+for dir_number in tqdm(range(1,35), desc="Cropping images"):
     # control parameters
-    dirc = f"images/{dir_number}"
+    dirc = f"images2/{dir_number}"
     folder = os.listdir(dirc)
     # print(" ")
     try:
-        os.makedirs(f"images_crop/{dir_number}")
+        os.makedirs(f"images_crop2/{dir_number}")
         print(f"Created folder 'images_crop/{dir_number}'")
     except:
         print(f"Working in folder 'images_crop/{dir_number}'")
@@ -52,7 +52,7 @@ for dir_number in tqdm(range(1,37), desc="Cropping images"):
                 img_crop = img.crop(set)
                 filename = file.replace(".JPG", "")
                 img_crop.save(fp=f"images_crop/{dir_number}/{filename}_{counter}.JPG")
-                # print(f"Saving cropped image to:  images_crop/{dir_number}/{counter}_{file}")
+                print(f"Saving cropped image to:  images_crop/{dir_number}/{counter}_{file}")
                 counter += 1
 
             # stopping memory leaking

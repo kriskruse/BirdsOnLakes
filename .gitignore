@@ -154,3 +154,5 @@ Object_Detection/yolov3.weights
 Object_Detection/yolov3.cfg
 Object_Detection/yolov3.weights
 Object_Detection/yolov3.cfg
+*.JPG
+/images2/

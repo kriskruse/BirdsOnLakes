@@ -86,10 +86,16 @@ def load_data(path, img_h, img_w, shuf=True):
 
 
 if __name__ == "__main__":
+    import cv2
     # params for tuning
     EPOCHS = 25  # how many iterations to train
-    batch = 25  # size of batches (This is dependent on GPU/CPU mem size, higher is faster but more mem is needed)
+    batch = 10  # size of batches (This is dependent on GPU/CPU mem size, higher is faster but more mem is needed)
     seed = 42069
+    # target_image = cv2.imread('/pad_1220/train/ABBOTTS BABBLER/001.jpg')
+    # img_height,  img_width, _ = target_image.shape
+    img_height = 900
+    img_width = 1200
+    channels_col = 3  # RGB has 3 color channels
 
     # seeding
     np.random.seed(seed)
@@ -97,11 +103,11 @@ if __name__ == "__main__":
 
     # import the data as a dataset
     print("Train dataset: ")
-    train_data = load_data("train", 224, 224)
+    train_data = load_data("pad_1220/train", img_height, img_width)
     print("Test dataset: ")
-    test_data = load_data("test", 224, 224, shuf=False)
+    test_data = load_data("padded/test", img_height, img_width, shuf=False)
     print("Validation dataset: ")
-    val_data = load_data("valid", 224, 224)
+    val_data = load_data("padded/valid", img_height, img_width)
 
     # we prefetch the data from cache
     train_data_pf = train_data.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
@@ -109,7 +115,7 @@ if __name__ == "__main__":
     val_data_pf = val_data.cache().prefetch(buffer_size=tf.data.AUTOTUNE)
 
     # setup the model
-    inputs = layers.Input(shape=(224, 224, 3), name='input_layer')
+    inputs = layers.Input(shape=(img_height, img_width, channels_col), name='input_layer')
     base_model = EfficientNetV2B3(include_top=False)
     base_model.trainable = False
     x = base_model(inputs, training=False)

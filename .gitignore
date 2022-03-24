@@ -162,3 +162,4 @@ Object_Detection/yolov3.cfg
 /YOLO/yolov5/
 /YOLO/YOLO/
 /YOLO/yolov5s.pt
+.idea/workspace.xml

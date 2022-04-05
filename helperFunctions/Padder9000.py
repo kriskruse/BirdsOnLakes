@@ -4,7 +4,7 @@ import glob
 import os
 
 # Get the size we want to achieve, uses an image so we can match that. can be set manually
-target_image = cv2.imread('images/1/IMAG0030.JPG')
+target_image = cv2.imread('../images/1/IMAG0030.JPG')
 new_image_height, new_image_width, _ = target_image.shape
 color = (0, 0, 0)
 

@@ -1,7 +1,7 @@
 import glob
 from bs4 import BeautifulSoup
 from collections import Counter
-
+import warnings
 
 def findClasses(paths=None):
     """
@@ -16,6 +16,9 @@ def findClasses(paths=None):
 
     if paths is None:
         paths = ["../images/*/*.xml", "../images2/*/*.xml"]
+    if type(paths) is not list:
+        warnings.warn("Input was not list but has been converted. If this doesn't sound right you might have an issue")
+        paths = [paths]
     class_found = []
     occurrences = []
 

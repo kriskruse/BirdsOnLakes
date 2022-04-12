@@ -163,3 +163,8 @@ Object_Detection/yolov3.cfg
 /YOLO/YOLO/
 /YOLO/yolov5s.pt
 .idea/workspace.xml
+/quartersize_images/
+/YoloV5_implementation/datasets/
+/YoloV5_implementation/Structure/
+/YoloV5_implementation/wandb/
+/YoloV5_implementation/yolov5/

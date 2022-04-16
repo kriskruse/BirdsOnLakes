@@ -6,6 +6,7 @@ import random
 import numpy as np
 import tqdm
 import threading
+from colorama import init
 
 
 class Images:
@@ -55,47 +56,62 @@ def getBoundingData(front, background, locations, labelpath, classlist, filename
     return loclog
 
 
-def testBoundingBoxes(datapath, labelpath):
-    # Run a test on a random image
-    # get the images data as our class and choose a random to test
-    test = Images(datapath)
-    ranimage = test.random()
-    im = cv2.imread(ranimage)
+def testBoundingBoxes(position, datapath, labelpath):
+    for _ in tqdm.tqdm(range(int(N / 100 if not N / 100 < 1 else 1)), desc=f"Running boundingBox check on {position}",
+                       position=position):
+        # Run a test on a random image
+        # get the images data as our class and choose a random to test
+        test = Images(datapath)
+        ranimage = test.random()
+        im = cv2.imread(ranimage)
 
-    # find and load the label data
-    with open(f"{labelpath}/{ranimage[15:-4]}.txt") as textfile:
-        data = textfile.read().split("\n")
-        data = [i.split() for i in data]  # [[],[]]
-        data = [[float(j) for j in i] for i in data]
+        # find and load the label data
+        with open(f"{labelpath}/{ranimage[15:-4]}.txt") as textfile:
+            data = textfile.read().split("\n")
+            data = [i.split() for i in data]  # [[],[]]
+            data = [[float(j) for j in i] for i in data]
 
-    # Calculate and draw the bounding boxes
-    locations = []
-    for dat in data:
-        try:
-            _, centerx, centery, width, height = dat
-            imy, imx, _ = im.shape
-            centerx = centerx * imx
-            centery = centery * imy
-            width = width * imx
-            height = height * imy
-            x1 = int(centerx - (width / 2))
-            x2 = int(centerx + (width / 2))
-            y1 = int(centery - (height / 2))
-            y2 = int(centery + (height / 2))
-            cv2.rectangle(im, (x1, y1), (x2, y2), (255, 0, 0), 1)
-            locations.append([x1, y1, x2, y2])
-        except:
-            continue
+        # Calculate and draw the bounding boxes
+        locations = []
+        for dat in data:
+            try:
+                _, centerx, centery, width, height = dat
+                imy, imx, _ = im.shape
+                centerx = centerx * imx
+                centery = centery * imy
+                width = width * imx
+                height = height * imy
+                x1 = int(centerx - (width / 2))
+                x2 = int(centerx + (width / 2))
+                y1 = int(centery - (height / 2))
+                y2 = int(centery + (height / 2))
+                cv2.rectangle(im, (x1, y1), (x2, y2), (255, 0, 0), 1)
+                locations.append([x1, y1, x2, y2])
+            except:
+                continue
 
-    # Show the test image
-    os.makedirs("BoundingTest", exist_ok=True)
-    cv2.imwrite(f"BoundingTest/{ranimage[-14:]}", im)
-    cv2.waitKey()
-    cv2.destroyAllWindows()
-    return locations
+        # Show the test image
+        os.makedirs("BoundingTest", exist_ok=True)
+        cv2.imwrite(f"BoundingTest/{ranimage[-14:]}", im)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
+    return
+
+
+def runtime(position, N, savelocation, labelsavepath, minbirds, maxbirds, classlist):
+    # Runtime
+    for _ in tqdm.tqdm(range(N), desc=f"Generating images on thread {position}", position=position):
+        front_path = birds.random()
+        background = backgrounds.random()
+        with Image.open(front_path) as front:
+            with Image.open(background) as background:
+                locations, filename = createRandomImage(front, background, savelocation, minbirds, maxbirds, front_path)
+                getBoundingData(front, background, locations, labelsavepath, classlist, filename)
 
 
 if __name__ == "__main__":
+    # Colorama init
+    init()
 
     # This is for testing only
     try:
@@ -109,9 +125,10 @@ if __name__ == "__main__":
     backgrounds = Images("quater/*.jpg")
     savelocation = "dataset/images"
     labelsavepath = "dataset/labels"
-    minbirds = 3
+    minbirds = 1
     maxbirds = 4
-    N = 10
+    threads = 16
+    N = 100000
     classlist = ['Duck', 'Cormorant', 'Heron;fa', 'Duck;fa', 'Goose', 'Cormorant;fa', 'Goose;fa', 'Swan;fa',
                  'Mute Swan', 'Seagull', 'Swan', 'Heron']
 
@@ -122,15 +139,27 @@ if __name__ == "__main__":
     os.makedirs(savelocation, exist_ok=True)
     os.makedirs(labelsavepath, exist_ok=True)
 
-    # Runtime
-    for i in tqdm.tqdm(range(N), desc="Images to generate"):
-        front_path = birds.random()
-        background = backgrounds.random()
-        with Image.open(front_path) as front:
-            with Image.open(background) as background:
-                locations, filename = createRandomImage(front, background, savelocation, minbirds, maxbirds, front_path)
-                boundloc = getBoundingData(front, background, locations, labelsavepath, classlist, filename)
+    # Lets make some threads:
+    N = int(N / threads)
+    threads = threads - 1
+    for i in range(threads):
+        locals()[f"t{i}"] = threading.Thread(target=runtime,
+                                             args=(i, N, savelocation, labelsavepath, minbirds, maxbirds, classlist))
 
-    # test a random image from path
-    for i in tqdm.tqdm(range(int(N / 100 if not N/100 <1 else 1)), desc="Running boundingBox check"):
-        testloc = testBoundingBoxes("dataset/images/*.jpg", "dataset/labels")
+    for i in range(threads):
+        locals()[f"t{i}"].start()
+
+    for i in range(threads):
+        locals()[f"t{i}"].join()
+
+    # test some random images from path
+    # Threaded because we can
+    for i in range(threads):
+        locals()[f"t{i}"] = threading.Thread(target=testBoundingBoxes, args=(
+            i, "dataset/images/*.jpg", "dataset/labels"))
+
+    for i in range(threads):
+        locals()[f"t{i}"].start()
+
+    for i in range(threads):
+        locals()[f"t{i}"].join()

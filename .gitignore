@@ -168,3 +168,9 @@ Object_Detection/yolov3.cfg
 /YoloV5_implementation/Structure/
 /YoloV5_implementation/wandb/
 /YoloV5_implementation/yolov5/
+/helperFunctions/dataset/
+/helperFunctions/croppedBirds/
+/helperFunctions/BoundingTest/
+/helperFunctions/birds/
+/helperFunctions/backgrounds/
+/helperFunctions/quater/

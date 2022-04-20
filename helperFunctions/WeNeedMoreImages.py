@@ -3,7 +3,7 @@ import os, shutil
 from glob import glob
 from PIL import Image, ImageEnhance
 from random import randrange, choice
-from numpy import add, multiply as npadd, npmultiply
+from numpy import add as npadd, multiply as npmultiply
 import tqdm
 import threading
 from colorama import init
@@ -141,7 +141,7 @@ def runtime(position, N, savelocation, labelsavepath, minbirds, maxbirds, classl
         with Image.open(front_path) as front:
             with Image.open(background) as background:
                 darkenvalue = randrange(50, 100, 1) / 100 if darkenbird else None  # Random how strong the darkening is
-                usefilter = random.choice([True, False]) if ranfilter else False  # If the filter is on we randomize it
+                usefilter = choice([True, False]) if ranfilter else False  # If the filter is on we randomize it
                 # create the new image and the mathing boundingbox data
                 locations, filename = createRandomImage(front, background, savelocation, minbirds, maxbirds, front_path,
                                                         usefilter, darkenvalue)
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     usefilter = True
     darkenbird = True
     threads = 16
-    N = 20
+    N = 1000
     classlist = ['Duck', 'Cormorant', 'Heron;fa', 'Duck;fa', 'Goose', 'Cormorant;fa', 'Goose;fa', 'Swan;fa',
                  'Mute Swan', 'Seagull', 'Swan', 'Heron']
 

@@ -1,6 +1,6 @@
-path: ../Structure
-train: ./images/train
-val:  ./images/test
+train: ../dataset/images
+val:  ../dataset/images
+test: ../Structure/images/train
 
 nc: 12
 names: ['Duck', 'Cormorant', 'Heron;fa', 'Duck;fa', 'Goose', 'Cormorant;fa', 'Goose;fa', 'Swan;fa', 'Mute Swan', 'Seagull', 'Swan', 'Heron']

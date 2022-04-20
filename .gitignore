@@ -127,6 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.idea
 .idea/misc.xml
 .idea/modules.xml
 .idea/vcs.xml
@@ -152,13 +153,10 @@ Kaggle_MOdel/.DS_Store
 /Kaggle_MOdel/padded/
 Object_Detection/yolov3.weights
 Object_Detection/yolov3.cfg
-Object_Detection/yolov3.weights
-Object_Detection/yolov3.cfg
 *.JPG
 /images2/
 /YOLO/labelImg/
 /YOLO/data/
-/YOLO/labelImg/
 /YOLO/yolov5/
 /YOLO/YOLO/
 /YOLO/yolov5s.pt
@@ -174,3 +172,5 @@ Object_Detection/yolov3.cfg
 /helperFunctions/birds/
 /helperFunctions/backgrounds/
 /helperFunctions/quater/
+/YoloV5_implementation/dataset/
+/YoloV5_implementation/yolov5l.pt

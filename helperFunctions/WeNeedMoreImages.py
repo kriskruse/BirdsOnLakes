@@ -1,11 +1,9 @@
-import random
-
 import cv2
 import os, shutil
-import glob
+from glob import glob
 from PIL import Image, ImageEnhance
 from random import randrange, choice
-import numpy as np
+from numpy import add, multiply as npadd, npmultiply
 import tqdm
 import threading
 from colorama import init
@@ -14,7 +12,7 @@ from time import sleep
 
 class Images:
     def __init__(self, path):
-        self.lst = glob.glob(path)
+        self.lst = glob(path)
         self.size = len(self.lst)
 
     def random(self):
@@ -29,7 +27,7 @@ def createRandomImage(front, background, saveLocation, minAmount, maxAmount, pat
         x = randrange(int(size[0] * 0.2), int(size[0] * 0.80), 1)  # find an x position
         y = randrange(int(size[1] * 0.2), int(size[1] * 0.80), 1)  # find a y position
         delta = randrange(100, 1000, 1) / 1000  # scale the bird so we have different sizes
-        resize = [int(x) for x in np.multiply(front.size, delta)]  # scale the pixel size and convert to integer
+        resize = [int(x) for x in npmultiply(front.size, delta)]  # scale the pixel size and convert to integer
         refront = front.resize(resize)  # reassign to the new scaled version
 
         if usefilter:
@@ -58,7 +56,7 @@ def getBoundingData(front, background, locations, labelpath, classlist, filename
     with open(f"{labelpath}/{filename}.txt", 'w') as textfile:
         for location in locations:
             x1, y1, size = location  # get the top left corner position
-            x2, y2 = np.add([x1, y1], size)  # calculate the bottom right
+            x2, y2 = npadd([x1, y1], size)  # calculate the bottom right
 
             # We then convert the xs and ys to the 4 sizes specified in the YoloV5 model description
             width = (x2 - x1) / xim

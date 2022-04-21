@@ -174,3 +174,10 @@ Object_Detection/yolov3.cfg
 /helperFunctions/birds/Tobechopped
 /YoloV5_implementation/dataset/
 /YoloV5_implementation/yolov5l.pt
+<<<<<<< HEAD
+/OneClassTestSet/
+/YoloV5_implementation/MultiClassTestSet/
+/YoloV5_implementation/OneClassTestSet/
+/helperFunctions/OneClassTrainSet/
+=======
+>>>>>>> parent of 8c4c415 (more birds)

@@ -48,7 +48,7 @@ def createRandomImage(front, background, saveLocation, minAmount, maxAmount, pat
     return locations, filename  # [x, y, resize], "file"
 
 
-def getBoundingData(front, background, locations, labelpath, classlist, filename):
+def getBoundingData(front, background, locations, labelpath, classlist, filename, onlybird=False):
     class_name = filename[:-6].lower()  # Remove numbers from name should yield class_name
     xim, yim = background.size  # get the size of the background
     loclog = []
@@ -63,7 +63,7 @@ def getBoundingData(front, background, locations, labelpath, classlist, filename
             height = (y2 - y1) / yim
             xcenter = ((x2 + x1) / 2) / xim
             ycenter = ((y2 + y1) / 2) / yim
-            classnum = classlist.index(class_name)
+            classnum = 1 if onlybird else classlist.index(class_name)
             textfile.write(f"{classnum} {xcenter} {ycenter} {width} {height}")  # save everything to file
             textfile.write('\n')  # newline in case there is more than one bird
             loclog.append([x1, y1, x2, y2])  # log position data, in case of debugging
@@ -132,7 +132,7 @@ def testBoundingBoxes(position, N, datapath, labelpath):
     return
 
 
-def runtime(position, N, savelocation, labelsavepath, minbirds, maxbirds, classlist, ranfilter=False, darkenbird=False):
+def runtime(position, N, savelocation, labelsavepath, minbirds, maxbirds, classlist, ranfilter=False, darkenbird=False, onlybird=False):
     # Runtime
     for _ in tqdm.tqdm(range(N), desc=f"Generating images on thread{position}", position=position):
         front_path = birds.random()  # get a random bird
@@ -145,7 +145,7 @@ def runtime(position, N, savelocation, labelsavepath, minbirds, maxbirds, classl
                 # create the new image and the mathing boundingbox data
                 locations, filename = createRandomImage(front, background, savelocation, minbirds, maxbirds, front_path,
                                                         usefilter, darkenvalue)
-                getBoundingData(front, background, locations, labelsavepath, classlist, filename)
+                getBoundingData(front, background, locations, labelsavepath, classlist, filename, onlybird=onlybird)
 
 
 if __name__ == "__main__":
@@ -168,8 +168,9 @@ if __name__ == "__main__":
     maxbirds = 4
     usefilter = True
     darkenbird = True
+    onlybird = True
     threads = 16
-    N = 1000
+    N = 100000
     classlist = ['Duck', 'Cormorant', 'Heron;fa', 'Duck;fa', 'Goose', 'Cormorant;fa', 'Goose;fa', 'Swan;fa',
                  'Mute Swan', 'Seagull', 'Swan', 'Heron']
 
@@ -186,7 +187,7 @@ if __name__ == "__main__":
     for i in range(threads):
         locals()[f"t{i}"] = threading.Thread(target=runtime,
                                              args=(i, N, savelocation, labelsavepath, minbirds, maxbirds, classlist,
-                                                   usefilter, darkenbird))
+                                                   usefilter, darkenbird, onlybird))
 
     for i in range(threads):
         locals()[f"t{i}"].start()

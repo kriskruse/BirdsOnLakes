@@ -34,7 +34,7 @@ def imagesToPath(paths=None):
                 shutil.copy(file, "../Structure/labels/train")
 
 
-def LableToStruc(paths=None, classlist=None, scale=1.0):
+def LableToStruc(paths=None, classlist=None, scale=1.0, onlybird=False):
     if classlist is None:
         classlist = ['Duck', 'Cormorant', 'Heron;fa', 'Duck;fa', 'Goose', 'Cormorant;fa', 'Goose;fa', 'Swan;fa',
                      'Mute Swan', 'Seagull', 'Swan', 'Heron']
@@ -73,7 +73,7 @@ def LableToStruc(paths=None, classlist=None, scale=1.0):
                     height = (ymax - ymin)/imagey
                     xcenter = (xmin + width/2)/imagex
                     ycenter = (ymin + height/2)/imagey
-                    classnum = classlist.index(className)
+                    classnum = 1 if onlybird else classlist.index(className)
                     textfile.write(f"{classnum} {xcenter} {ycenter} {width} {height}")
                     textfile.write('\n')
 

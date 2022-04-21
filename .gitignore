@@ -169,8 +169,8 @@ Object_Detection/yolov3.cfg
 /helperFunctions/dataset/
 /helperFunctions/croppedBirds/
 /helperFunctions/BoundingTest/
-/helperFunctions/birds/
 /helperFunctions/backgrounds/
 /helperFunctions/quater/
+/helperFunctions/birds/Tobechopped
 /YoloV5_implementation/dataset/
 /YoloV5_implementation/yolov5l.pt

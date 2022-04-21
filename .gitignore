@@ -134,6 +134,11 @@ dmypy.json
 .idea/BirdsOnLakes.iml
 .idea/inspectionProfiles/profiles_settings.xml
 .idea/inspectionProfiles/Project_Default.xml
+
+# Custom addins
+*.JPG
+*.zip
+*.7z
 /images/
 /images_crop/
 /camera_1_seed_1001.zip
@@ -153,7 +158,6 @@ Kaggle_MOdel/.DS_Store
 /Kaggle_MOdel/padded/
 Object_Detection/yolov3.weights
 Object_Detection/yolov3.cfg
-*.JPG
 /images2/
 /YOLO/labelImg/
 /YOLO/data/
@@ -174,10 +178,8 @@ Object_Detection/yolov3.cfg
 /helperFunctions/birds/Tobechopped
 /YoloV5_implementation/dataset/
 /YoloV5_implementation/yolov5l.pt
-<<<<<<< HEAD
 /OneClassTestSet/
 /YoloV5_implementation/MultiClassTestSet/
 /YoloV5_implementation/OneClassTestSet/
 /helperFunctions/OneClassTrainSet/
-=======
->>>>>>> parent of 8c4c415 (more birds)
+

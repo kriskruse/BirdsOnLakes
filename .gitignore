@@ -183,3 +183,4 @@ Object_Detection/yolov3.cfg
 /YoloV5_implementation/OneClassTestSet/
 /helperFunctions/OneClassTrainSet/
 
+/helperFunctions/test/

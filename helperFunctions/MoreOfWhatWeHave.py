@@ -91,7 +91,7 @@ def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
             y1 = int(ycenter - (height / 2))
             y2 = int(ycenter + (height / 2))
 
-            x1, x2 = x1 - cx, x2-cx
+            x1, x2 = x1 - cx, x2 - cx
             y1, y2 = y1 - cy, y2 - cy
 
             rx1, ry1 = M.dot(np.array([x1, y1]))
@@ -99,6 +99,7 @@ def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
 
             rx1, rx2 = rx1 + cx, rx2 + cx
             ry1, ry2 = ry1 + cy, ry2 + cy
+
             rwidth = (abs(rx2 - rx1)) / w
             rheight = (abs(ry2 - ry2)) / h
             rxcenter = (min(rx1,rx2) + width / 2) / w

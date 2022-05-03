@@ -3,6 +3,7 @@ import random
 import cv2
 import os, shutil
 from glob import glob
+from affine import Affine
 
 import numpy as np
 from PIL import Image, ImageEnhance
@@ -25,7 +26,8 @@ class Images:
         else:
             self.xml_lst = glob(f"{path}/*.xml")
 
-        self.lst = [f"{i[:-4]}.{format}" for i in self.xml_lst] if len(self.xml_lst) > 0 else glob(f"{path}/*.{format}")  # find the path of all images in folder
+        self.lst = [f"{i[:-4]}.{format}" for i in self.xml_lst] if len(self.xml_lst) > 0 else glob(
+            f"{path}/*.{format}")  # find the path of all images in folder
         self.size = len(self.lst)
 
     def random(self):
@@ -64,8 +66,8 @@ def xmlToTxt(xmlPath, labelsavepath, imagename, classlist, scale=1 / 4, onlybird
 
             width = (xmax - xmin) / imagex
             height = (ymax - ymin) / imagey
-            xcenter = (xmin + width / 2) / imagex
-            ycenter = (ymin + height / 2) / imagey
+            xcenter = ((xmax + xmin) / 2) / imagex
+            ycenter = ((ymax + ymin) / 2) / imagey
             classnum = 1 if onlybird else classlist.index(className)
             textfile.write(f"{classnum} {xcenter} {ycenter} {width} {height}")
             textfile.write('\n')
@@ -75,35 +77,34 @@ def xmlToTxt(xmlPath, labelsavepath, imagename, classlist, scale=1 / 4, onlybird
 
 def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
     h, w = imgsource.shape[:2]
-    cx, cy = (w // 2, h // 2)
-    M = cv2.getRotationMatrix2D((cx, cy), random.randint(1, 359), 1)
+    cx, cy = (w / 2, h / 2)
+    angle = random.randint(1, 359)
+    M = cv2.getRotationMatrix2D((cx, cy), angle, 1)
     rot_image = cv2.warpAffine(imgsource, M, (w, h))
     newname = f"{imagename}{randrange(100, 999, 1)}"
     cv2.imwrite(f"{savepath}/{newname}.jpg", rot_image)
 
-    M = np.array([[M[0, 0], M[0, 1]], [M[1, 0], M[1, 1]]])
     rot_data = []
     with open(f"{labelsavepath}/{newname}.txt", 'w') as textfile:
         for obj in txtdata:
             classnum, xcenter, ycenter, width, height = obj
-            x1 = int(xcenter - (width / 2))
-            x2 = int(xcenter + (width / 2))
-            y1 = int(ycenter - (height / 2))
-            y2 = int(ycenter + (height / 2))
-
-            x1, x2 = x1 - cx, x2 - cx
-            y1, y2 = y1 - cy, y2 - cy
-
-            rx1, ry1 = M.dot(np.array([x1, y1]))
-            rx2, ry2 = M.dot(np.array([x2, y2]))
-
-            rx1, rx2 = rx1 + cx, rx2 + cx
-            ry1, ry2 = ry1 + cy, ry2 + cy
+            x1 = (xcenter - (width / 2)) * w
+            x2 = (xcenter + (width / 2)) * w
+            y1 = (ycenter - (height / 2)) * h
+            y2 = (ycenter + (height / 2)) * h
+            p1 = (x1, y1)
+            p2 = (x2, y2)
+            rp1 = Affine.rotation(-angle, (cx, cy)) * p1
+            rp2 = Affine.rotation(-angle, (cx, cy)) * p2
+            bcx = rp1[0] - rp2[0]
+            bcy = rp1[1] - rp2[1]
+            rx1, ry1 = Affine.rotation(-angle, (bcx,bcy)) * p1
+            rx2, ry2 = Affine.rotation(-angle, (bcx,bcy)) * p2
 
             rwidth = (abs(rx2 - rx1)) / w
             rheight = (abs(ry2 - ry2)) / h
-            rxcenter = (min(rx1,rx2) + width / 2) / w
-            rycenter = (min(ry1,ry2) + height / 2) / h
+            rxcenter = (min(rx1, rx2) + rwidth / 2) / w
+            rycenter = (min(ry1, ry2) + rheight / 2) / h
 
             textfile.write(f"{classnum} {rxcenter} {rycenter} {rwidth} {rheight}")
             textfile.write('\n')
@@ -122,45 +123,49 @@ def imageToGray(imgsource, imagename, txtdata, savepath, labelsavepath):
             textfile.write(f"{classnum} {xcenter} {ycenter} {width} {height}")
             textfile.write('\n')
 
-def testBoundingBoxes(datapath, labelpath, N):
 
-        # Run a test on a random image
-        # get the images data as our class and choose a random to test
-        test = Images(datapath, format='jpg')
+def testBoundingBoxes(imagepath, labelpath, N):
+    # Run a test on a random image
+    # get the images data as our class and choose a random to test
+    test = Images(imagepath, format='jpg')
+    debug_data = []
 
-        for i in range(N):
-            ranimage = test.random()
-            im = cv2.imread(ranimage)
-            imagename = ranimage.split('\\')[-1][:-4]
+    for i in range(N):
+        ranimage = test.random()
+        im = cv2.imread(ranimage)
+        imagename = ranimage.split('\\')[-1][:-4]
 
-            # find and load the label data
-            with open(f"{labelpath}/{imagename}.txt") as textfile:
-                data = textfile.read().split("\n")
-                data = [i.split() for i in data]  # [[],[]]
-                data = [[float(j) for j in i] for i in data]
+        # find and load the label data
+        with open(f"{labelpath}/{imagename}.txt") as textfile:
+            data = textfile.read().split("\n")
+            data = [i.split() for i in data]  # [[],[]]
+            data = [[float(j) for j in i] for i in data]
 
-            # Calculate and draw the bounding boxes
-            locations = []
-            for dat in data:
-                try:
-                    _, centerx, centery, width, height = dat
-                    imy, imx, _ = im.shape
-                    centerx = centerx * imx
-                    centery = centery * imy
-                    width = width * imx
-                    height = height * imy
-                    x1 = int(centerx - (width / 2))
-                    x2 = int(centerx + (width / 2))
-                    y1 = int(centery - (height / 2))
-                    y2 = int(centery + (height / 2))
-                    cv2.rectangle(im, (x1, y1), (x2, y2), (255, 0, 0), 1)
-                    locations.append([x1, y1, x2, y2])
-                except:
-                    continue
+        # Calculate and draw the bounding boxes
+        locations = []
+        for dat in data:
+            try:
+                _, centerx, centery, width, height = dat
+                imy, imx, _ = im.shape
+                cx = centerx * imx
+                cy = centery * imy
+                w = width * imx
+                h = height * imy
+                x1 = int(cx - (w / 2))
+                x2 = int(cx + (w / 2))
+                y1 = int(cy - (h / 2))
+                y2 = int(cy + (h / 2))
+                print("y is wrong" if y1 == y2 else "")
+                cv2.rectangle(im, (x1, y1), (x2, y2), (255, 0, 0), 1)
+                locations.append([x1, y1, x2, y2])
+            except:
+                continue
 
-            # Save the test images to a folder
-            os.makedirs("BoundingTest", exist_ok=True)
-            cv2.imwrite(f"BoundingTest/{imagename}.jpg", im)
+        # Save the test images to a folder
+        os.makedirs("BoundingTest", exist_ok=True)
+        cv2.imwrite(f"BoundingTest/{imagename}.jpg", im)
+        debug_data.append([imagename, locations])
+    return debug_data
 
 
 def main(position, img, savepath, labelsavepath, classlist, onlybird, N=1):
@@ -184,18 +189,21 @@ if __name__ == "__main__":
     labelsavepath = "test/labels"
     classlist = ['Duck', 'Cormorant', 'Heron;fa', 'Duck;fa', 'Goose', 'Cormorant;fa', 'Goose;fa', 'Swan;fa',
                  'Mute Swan', 'Seagull', 'Swan', 'Heron']
-    onlybird = False
-    delete = True
     path1 = "../images/*"
     path2 = "../images2/*"
+    debugpath = "picked"
     # paths = [path1, path2]
-    paths = [path2]
+    paths = [debugpath]
     N = 1
     threads = 12
+    onlybird = False
+    delete = True
+    debug = True
 
     if delete:
         try:
             shutil.rmtree("test")
+            shutil.rmtree("BoundingTest")
         except:
             print()
 
@@ -209,38 +217,42 @@ if __name__ == "__main__":
 
     # main(position, img, savepath, labelsavepath, classlist, onlybird, N)
 
-    for i in range(threads):
-        locals()[f"t{i}"] = threading.Thread(target=main,
-                                             args=(i, img, savepath, labelsavepath, classlist, onlybird, N))
+    if not debug:
+        for i in range(threads):
+            locals()[f"t{i}"] = threading.Thread(target=main,
+                                                 args=(i, img, savepath, labelsavepath, classlist, onlybird, N))
 
-    for i in range(threads):
-        locals()[f"t{i}"].start()
+        for i in range(threads):
+            locals()[f"t{i}"].start()
 
-    for i in range(threads):
-        locals()[f"t{i}"].join()
+        for i in range(threads):
+            locals()[f"t{i}"].join()
 
-    os.system("cls")
-    print("Generated all images")
-    print("Running bounding box check")
-    sleep(0.5)
-    # test some random images from path
-    # Threaded because we can
+        os.system("cls")
+        print("Generated all images")
+        print("Running bounding box check")
+        sleep(0.5)
+        # test some random images from path
+        # Threaded because we can
 
-    #TODO: Fix bounding boxes
-    testBoundingBoxes(savepath, labelsavepath, 100)
+        for i in range(threads):
+            locals()[f"t{i}"] = threading.Thread(target=testBoundingBoxes,
+                                                 args=(f"{savepath}/*.jpg", labelsavepath, 100))
 
-    # for i in range(threads):
-    #     locals()[f"t{i}"] = threading.Thread(target=testBoundingBoxes, args=( f"{savepath}/*.jpg", labelsavepath, 100))
-    #
-    # for i in range(threads):
-    #     locals()[f"t{i}"].start()
-    #
-    # for i in range(threads):
-    #     locals()[f"t{i}"].join()
-    # # os.system("cls")
-    # print("Bounding box generation done succesfully")
-    # print("Please check the BoundingBoxCheck folder for bounding box validation")
-    # sleep(0.5)
+        for i in range(threads):
+            locals()[f"t{i}"].start()
+
+        for i in range(threads):
+            locals()[f"t{i}"].join()
+        # os.system("cls")
+        print("Bounding box generation done succesfully")
+        print("Please check the BoundingBoxCheck folder for bounding box validation")
+        sleep(0.5)
+
+    else:
+        main(1, img, savepath, labelsavepath, classlist, onlybird, 1)
+        # TODO: Fix bounding boxes
+        print(testBoundingBoxes(savepath, labelsavepath, 10))
 
     # make x amount of copies with different changes
     # - image shifted right or left

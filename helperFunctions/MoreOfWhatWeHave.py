@@ -1,19 +1,14 @@
-import random
-
 import cv2
 import os, shutil
 from glob import glob
-from affine import Affine
-
-import numpy as np
-from PIL import Image, ImageEnhance
-from random import randrange, choice
+import imgaug.augmenters as iaa
+from random import randrange
 from bs4 import BeautifulSoup
-from numpy import add as npadd, multiply as npmultiply
 import tqdm
 import threading
 from colorama import init
 from time import sleep
+from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
 
 
 class Images:
@@ -76,40 +71,59 @@ def xmlToTxt(xmlPath, labelsavepath, imagename, classlist, scale=1 / 4, onlybird
 
 
 def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
-    h, w = imgsource.shape[:2]
-    cx, cy = (w / 2, h / 2)
-    angle = random.randint(1, 359)
-    M = cv2.getRotationMatrix2D((cx, cy), angle, 1)
-    rot_image = cv2.warpAffine(imgsource, M, (w, h))
+    # Loading
+    h, w, _ = imgsource.shape
     newname = f"{imagename}{randrange(100, 999, 1)}"
-    cv2.imwrite(f"{savepath}/{newname}.jpg", rot_image)
 
-    rot_data = []
+    # Initialize augmentation
+    augmentation = iaa.Sequential([
+        iaa.Sometimes(0.7, [
+            iaa.Affine(rotate=(0, 359))
+        ]),
+        iaa.Sometimes(0.5, [
+            iaa.Fliplr(p=1.)
+        ]),
+        iaa.Sometimes(0.2, [
+            iaa.Flipud(p=1.)
+        ]),
+        iaa.Sometimes(0.5, [
+            iaa.GammaContrast(gamma=2.0)
+        ]),
+        iaa.Sometimes(0.5, [
+            iaa.AdditiveGaussianNoise(10, 20)
+        ])
+    ])
+
+    # Data manipulation
+    bboxes = []
+    for obj in txtdata:
+        classnum, xcenter, ycenter, width, height = obj
+        x1 = (xcenter - width / 2) * w
+        y1 = (ycenter - height / 2) * h
+        x2 = (xcenter + width / 2) * w
+        y2 = (ycenter + height / 2) * h
+        bboxes.append(BoundingBox(x1, y1, x2, y2, label=classnum))
+
+    bbs = BoundingBoxesOnImage(bboxes, shape=imgsource.shape)
+    new_image, new_bbs = augmentation(image=imgsource, bounding_boxes=bbs)
+
+    # Data Saving
+    cv2.imwrite(f"{savepath}/{newname}.jpg", new_image)
+
+    aug_data = []
     with open(f"{labelsavepath}/{newname}.txt", 'w') as textfile:
-        for obj in txtdata:
-            classnum, xcenter, ycenter, width, height = obj
-            x1 = (xcenter - (width / 2)) * w
-            x2 = (xcenter + (width / 2)) * w
-            y1 = (ycenter - (height / 2)) * h
-            y2 = (ycenter + (height / 2)) * h
-            p1 = (x1, y1)
-            p2 = (x2, y2)
-            rp1 = Affine.rotation(-angle, (cx, cy)) * p1
-            rp2 = Affine.rotation(-angle, (cx, cy)) * p2
-            bcx = rp1[0] - rp2[0]
-            bcy = rp1[1] - rp2[1]
-            rx1, ry1 = Affine.rotation(-angle, (bcx,bcy)) * p1
-            rx2, ry2 = Affine.rotation(-angle, (bcx,bcy)) * p2
+        for i in new_bbs.bounding_boxes:
+            x1, y1, x2, y2, classnum = i.x1, i.y1, i.x2, i.y2, i.label
 
-            rwidth = (abs(rx2 - rx1)) / w
-            rheight = (abs(ry2 - ry2)) / h
-            rxcenter = (min(rx1, rx2) + rwidth / 2) / w
-            rycenter = (min(ry1, ry2) + rheight / 2) / h
+            awidth = (x2 - x1) / w
+            aheight = (y2 - y1) / h
+            axcenter = ((x2 + x1) / 2) / w
+            aycenter = ((y2 + y1) / 2) / h
 
-            textfile.write(f"{classnum} {rxcenter} {rycenter} {rwidth} {rheight}")
+            textfile.write(f"{classnum} {axcenter} {aycenter} {awidth} {aheight}")
             textfile.write('\n')
-            rot_data.append([classnum, rxcenter, rycenter, rwidth, rheight])
-    return rot_image, rot_data
+            aug_data.append([classnum, axcenter, aycenter, awidth, aheight])
+    return new_image, aug_data
 
 
 def imageToGray(imgsource, imagename, txtdata, savepath, labelsavepath):
@@ -177,7 +191,7 @@ def main(position, img, savepath, labelsavepath, classlist, onlybird, N=1):
         objectdata = xmlToTxt(xmlpath, labelsavepath, imagename, classlist, scale=1 / 4, onlybird=onlybird)
         imageToGray(image, imagename, objectdata, savepath, labelsavepath)
 
-        for i in range(N):
+        for n in range(N):
             rot_image, rot_data = RotateImageAndData(image, imagename, objectdata, savepath, labelsavepath)
             imageToGray(rot_image, imagename, rot_data, savepath, labelsavepath)
 
@@ -192,13 +206,13 @@ if __name__ == "__main__":
     path1 = "../images/*"
     path2 = "../images2/*"
     debugpath = "picked"
-    # paths = [path1, path2]
-    paths = [debugpath]
-    N = 1
+    paths = [path1, path2]
+    # paths = [debugpath]
     threads = 12
-    onlybird = False
+    N = 100
+    onlybird = True
     delete = True
-    debug = True
+    debug = False
 
     if delete:
         try:
@@ -211,12 +225,9 @@ if __name__ == "__main__":
     os.makedirs(labelsavepath, exist_ok=True)
 
     img = Images(paths)
-    # print(img.xml_lst)
-    # print(img.size)
-    # print(img.lst)
 
-    # main(position, img, savepath, labelsavepath, classlist, onlybird, N)
-
+    # Split to threads
+    N = N // threads
     if not debug:
         for i in range(threads):
             locals()[f"t{i}"] = threading.Thread(target=main,
@@ -237,7 +248,7 @@ if __name__ == "__main__":
 
         for i in range(threads):
             locals()[f"t{i}"] = threading.Thread(target=testBoundingBoxes,
-                                                 args=(f"{savepath}/*.jpg", labelsavepath, 100))
+                                                 args=(savepath, labelsavepath, 100))
 
         for i in range(threads):
             locals()[f"t{i}"].start()

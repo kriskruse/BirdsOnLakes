@@ -1,6 +1,7 @@
 import cv2
 import os, shutil
 from glob import glob
+import imgaug as ia
 import imgaug.augmenters as iaa
 from random import randrange
 from bs4 import BeautifulSoup
@@ -106,6 +107,7 @@ def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
 
     bbs = BoundingBoxesOnImage(bboxes, shape=imgsource.shape)
     new_image, new_bbs = augmentation(image=imgsource, bounding_boxes=bbs)
+    new_bbs = new_bbs.remove_out_of_image()
 
     # Data Saving
     cv2.imwrite(f"{savepath}/{newname}.jpg", new_image)

@@ -64,7 +64,7 @@ def xmlToTxt(xmlPath, labelsavepath, imagename, classlist, scale=1 / 4, onlybird
             height = (ymax - ymin) / imagey
             xcenter = ((xmax + xmin) / 2) / imagex
             ycenter = ((ymax + ymin) / 2) / imagey
-            classnum = 1 if onlybird else classlist.index(className)
+            classnum = 0 if onlybird else classlist.index(className)
             textfile.write(f"{classnum} {xcenter} {ycenter} {width} {height}")
             textfile.write('\n')
             data.append([classnum, xcenter, ycenter, width, height])
@@ -201,8 +201,8 @@ def main(position, img, savepath, labelsavepath, classlist, onlybird, N=1):
 if __name__ == "__main__":
     init()
     ## Parameters
-    savepath = "test/images"
-    labelsavepath = "test/labels"
+    savepath = "oneClassDataSet/images"
+    labelsavepath = "oneClassDataSet/labels"
     classlist = ['Duck', 'Cormorant', 'Heron;fa', 'Duck;fa', 'Goose', 'Cormorant;fa', 'Goose;fa', 'Swan;fa',
                  'Mute Swan', 'Seagull', 'Swan', 'Heron']
     path1 = "../images/*"
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     debugpath = "picked"
     paths = [path1, path2]
     # paths = [debugpath]
-    threads = 12
+    threads = 24
     N = 100
     onlybird = True
     delete = True
@@ -218,7 +218,7 @@ if __name__ == "__main__":
 
     if delete:
         try:
-            shutil.rmtree("test")
+            shutil.rmtree("oneClassDataSet")
             shutil.rmtree("BoundingTest")
         except:
             print()

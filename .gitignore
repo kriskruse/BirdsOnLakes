@@ -139,6 +139,7 @@ dmypy.json
 *.JPG
 *.zip
 *.7z
+*.pt
 /images/
 /images_crop/
 /camera_1_seed_1001.zip
@@ -186,3 +187,4 @@ Object_Detection/yolov3.cfg
 /helperFunctions/test/
 /helperFunctions/picked/
 /helperFunctions/OneClassTrainSet_improved/
+/helperFunctions/oneClassDataSet_proper/

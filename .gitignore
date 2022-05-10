@@ -188,3 +188,4 @@ Object_Detection/yolov3.cfg
 /helperFunctions/picked/
 /helperFunctions/OneClassTrainSet_improved/
 /helperFunctions/oneClassDataSet_proper/
+/helperFunctions/oneClassDataSet/

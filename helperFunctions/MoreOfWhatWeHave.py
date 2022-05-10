@@ -5,11 +5,12 @@ import imgaug as ia
 import imgaug.augmenters as iaa
 from random import randrange
 from bs4 import BeautifulSoup
-import tqdm
+from tqdm.auto import tqdm
 import threading
 from colorama import init
 from time import sleep
 from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
+import warnings
 
 
 class Images:
@@ -21,6 +22,10 @@ class Images:
                 self.xml_lst.extend(glob(f"{l}/*.xml"))
         else:
             self.xml_lst = glob(f"{path}/*.xml")
+
+        if len(self.xml_lst) < 1:
+            warnings.warn(f"No .xml files found, assuming no bounding boxes for all images in folder {path}", SyntaxWarning)
+            self.xml_lst = glob(f"{path}/*.jpg")
 
         self.lst = [f"{i[:-4]}.{format}" for i in self.xml_lst] if len(self.xml_lst) > 0 else glob(
             f"{path}/*.{format}")  # find the path of all images in folder
@@ -95,36 +100,43 @@ def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
         ])
     ])
 
-    # Data manipulation
-    bboxes = []
-    for obj in txtdata:
-        classnum, xcenter, ycenter, width, height = obj
-        x1 = (xcenter - width / 2) * w
-        y1 = (ycenter - height / 2) * h
-        x2 = (xcenter + width / 2) * w
-        y2 = (ycenter + height / 2) * h
-        bboxes.append(BoundingBox(x1, y1, x2, y2, label=classnum))
+    if len(txtdata) > 0:
+        # Data manipulation
+        bboxes = []
+        for obj in txtdata:
+            classnum, xcenter, ycenter, width, height = obj
+            x1 = (xcenter - width / 2) * w
+            y1 = (ycenter - height / 2) * h
+            x2 = (xcenter + width / 2) * w
+            y2 = (ycenter + height / 2) * h
+            bboxes.append(BoundingBox(x1, y1, x2, y2, label=classnum))
 
-    bbs = BoundingBoxesOnImage(bboxes, shape=imgsource.shape)
-    new_image, new_bbs = augmentation(image=imgsource, bounding_boxes=bbs)
-    new_bbs = new_bbs.remove_out_of_image()
+        bbs = BoundingBoxesOnImage(bboxes, shape=imgsource.shape)
+        new_image, new_bbs = augmentation(image=imgsource, bounding_boxes=bbs)
+        # new_bbs = new_bbs.remove_out_of_image()
 
-    # Data Saving
-    cv2.imwrite(f"{savepath}/{newname}.jpg", new_image)
+        # Data Saving
+        cv2.imwrite(f"{savepath}/{newname}.jpg", new_image)
 
-    aug_data = []
-    with open(f"{labelsavepath}/{newname}.txt", 'w') as textfile:
-        for i in new_bbs.bounding_boxes:
-            x1, y1, x2, y2, classnum = i.x1, i.y1, i.x2, i.y2, i.label
+        aug_data = []
+        with open(f"{labelsavepath}/{newname}.txt", 'w') as textfile:
+            for i in new_bbs.bounding_boxes:
+                x1, y1, x2, y2, classnum = i.x1, i.y1, i.x2, i.y2, i.label
 
-            awidth = (x2 - x1) / w
-            aheight = (y2 - y1) / h
-            axcenter = ((x2 + x1) / 2) / w
-            aycenter = ((y2 + y1) / 2) / h
+                awidth = (x2 - x1) / w
+                aheight = (y2 - y1) / h
+                axcenter = ((x2 + x1) / 2) / w
+                aycenter = ((y2 + y1) / 2) / h
 
-            textfile.write(f"{classnum} {axcenter} {aycenter} {awidth} {aheight}")
-            textfile.write('\n')
-            aug_data.append([classnum, axcenter, aycenter, awidth, aheight])
+                textfile.write(f"{classnum} {axcenter} {aycenter} {awidth} {aheight}")
+                textfile.write('\n')
+                aug_data.append([classnum, axcenter, aycenter, awidth, aheight])
+    else:
+        warnings.warn("No bounding box data given, proceding without", UserWarning)
+        new_image = augmentation(image=imgsource)
+        aug_data = []
+
+
     return new_image, aug_data
 
 
@@ -133,11 +145,14 @@ def imageToGray(imgsource, imagename, txtdata, savepath, labelsavepath):
     newname = f"{imagename}{randrange(100, 999, 1)}"
     cv2.imwrite(f"{savepath}/{newname}.jpg", gray)
 
-    with open(f"{labelsavepath}/{newname}.txt", 'w') as textfile:
-        for obj in txtdata:
-            classnum, xcenter, ycenter, width, height = obj
-            textfile.write(f"{classnum} {xcenter} {ycenter} {width} {height}")
-            textfile.write('\n')
+    if len(txtdata) > 0 and len(labelsavepath) > 1:
+        with open(f"{labelsavepath}/{newname}.txt", 'w') as textfile:
+            for obj in txtdata:
+                classnum, xcenter, ycenter, width, height = obj
+                textfile.write(f"{classnum} {xcenter} {ycenter} {width} {height}")
+                textfile.write('\n')
+    else:
+        warnings.warn(f"No bounding box data or label save path was given, saveing image without {newname}", UserWarning)
 
 
 def testBoundingBoxes(imagepath, labelpath, N):
@@ -185,7 +200,7 @@ def testBoundingBoxes(imagepath, labelpath, N):
 
 
 def main(position, img, savepath, labelsavepath, classlist, onlybird, N=1):
-    for i in tqdm.tqdm(range(img.size), desc=f"Generating images on thread{position}", position=position):
+    for i in tqdm(range(img.size), desc=f"Generating images on thread{position}", position=position, leave=True):
         imagepath = img.lst[i]
         xmlpath = img.xml_lst[i]
         imagename = xmlpath.split("\\")[-1][:-4]
@@ -195,6 +210,7 @@ def main(position, img, savepath, labelsavepath, classlist, onlybird, N=1):
 
         for n in range(N):
             rot_image, rot_data = RotateImageAndData(image, imagename, objectdata, savepath, labelsavepath)
+
             imageToGray(rot_image, imagename, rot_data, savepath, labelsavepath)
 
 
@@ -211,7 +227,7 @@ if __name__ == "__main__":
     paths = [path1, path2]
     # paths = [debugpath]
     threads = 24
-    N = 100
+    N = 95
     onlybird = True
     delete = True
     debug = False
@@ -264,7 +280,6 @@ if __name__ == "__main__":
 
     else:
         main(1, img, savepath, labelsavepath, classlist, onlybird, 1)
-        # TODO: Fix bounding boxes
         print(testBoundingBoxes(savepath, labelsavepath, 10))
 
     # make x amount of copies with different changes

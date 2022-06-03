@@ -14,7 +14,7 @@ import warnings
 
 
 class Images:
-    def __init__(self, path, format='jpg'):
+    def __init__(self, path, format='JPG'):
 
         if type(path) != str:
             self.xml_lst = []
@@ -25,10 +25,11 @@ class Images:
 
         if len(self.xml_lst) < 1:
             warnings.warn(f"No .xml files found, assuming no bounding boxes for all images in folder {path}", SyntaxWarning)
-            self.xml_lst = glob(f"{path}/*.jpg")
+            self.xml_lst = glob(f"{path}/*.JPG")
 
         self.lst = [f"{i[:-4]}.{format}" for i in self.xml_lst] if len(self.xml_lst) > 0 else glob(
             f"{path}/*.{format}")  # find the path of all images in folder
+
         self.size = len(self.lst)
 
     def random(self):
@@ -116,7 +117,7 @@ def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
         # new_bbs = new_bbs.remove_out_of_image()
 
         # Data Saving
-        cv2.imwrite(f"{savepath}/{newname}.jpg", new_image)
+        cv2.imwrite(f"{savepath}/{newname}.JPG", new_image)
 
         aug_data = []
         with open(f"{labelsavepath}/{newname}.txt", 'w') as textfile:
@@ -143,7 +144,7 @@ def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
 def imageToGray(imgsource, imagename, txtdata, savepath, labelsavepath):
     gray = cv2.cvtColor(imgsource, cv2.COLOR_BGR2GRAY)
     newname = f"{imagename}{randrange(100, 999, 1)}"
-    cv2.imwrite(f"{savepath}/{newname}.jpg", gray)
+    cv2.imwrite(f"{savepath}/{newname}.JPG", gray)
 
     if len(txtdata) > 0 and len(labelsavepath) > 1:
         with open(f"{labelsavepath}/{newname}.txt", 'w') as textfile:
@@ -158,7 +159,7 @@ def imageToGray(imgsource, imagename, txtdata, savepath, labelsavepath):
 def testBoundingBoxes(imagepath, labelpath, N):
     # Run a test on a random image
     # get the images data as our class and choose a random to test
-    test = Images(imagepath, format='jpg')
+    test = Images(imagepath, format='JPG')
     debug_data = []
 
     for i in range(N):
@@ -194,7 +195,7 @@ def testBoundingBoxes(imagepath, labelpath, N):
 
         # Save the test images to a folder
         os.makedirs("BoundingTest", exist_ok=True)
-        cv2.imwrite(f"BoundingTest/{imagename}.jpg", im)
+        cv2.imwrite(f"BoundingTest/{imagename}.JPG", im)
         debug_data.append([imagename, locations])
     return debug_data
 
@@ -223,6 +224,7 @@ if __name__ == "__main__":
                  'Mute Swan', 'Seagull', 'Swan', 'Heron']
     path1 = "../images/*"
     path2 = "../images2/*"
+    path3 = "../images7/*"
     debugpath = "picked"
     paths = [path1, path2]
     # paths = [debugpath]

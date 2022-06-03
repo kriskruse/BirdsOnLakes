@@ -9,7 +9,7 @@ os.chdir("/Users\KrisK\Desktop\Github\BirdsOnLakes\YoloV5_implementation\yolov5"
 model = torch.hub.load('', 'custom', path='../best.pt', source='local')
 
 # get images to run on
-paths = glob("../OneClassTestSet/images/test/*.jpg")
+paths = glob("C:/Users\KrisK\Desktop\Github\BirdsOnLakes/Non_labeled_images\images picked/*.JPG")
 images = []
 for path in paths:
     images.append(Image.open(path))
@@ -22,8 +22,8 @@ results = model(images, size=1008)
 # Results
 results.print()
 os.makedirs("../testresults", exist_ok=True)
-results.save()
+results.show()
 
-print(results.pandas().xyxy[0])  # im1 predictions (pandas)
-print(results.pandas().xyxy[1])
-print(results.pandas().xyxy[2])
+print(results.pandas().xyxy)  # im1 predictions (pandas)
+# print(results.pandas().xyxy[1])
+# print(results.pandas().xyxy[2])

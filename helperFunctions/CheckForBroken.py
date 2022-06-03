@@ -1,14 +1,19 @@
 from glob import glob
 from os import listdir
 from PIL import Image
+import cv2
 
 broken = []
-for filename in listdir('./oneClassDataSet_proper/images/'):
-    if filename.endswith('.jpg'):
+once = False
+for filename in listdir('./oneClassDataSet/images/'):
+    if filename.endswith('.JPG'):
+        if not once:
+            print("Found images", filename)
+            once = True
         try:
-            img = Image.open('./oneClassDataSet_proper/images/' + filename)  # open the image file
-            img.verify()  # verify that it is, in fact an image
-        except (IOError, SyntaxError) as e:
+            img = cv2.imread('./oneClassDataSet/images/' + filename)  # open the image file
+            img = cv2.resize(img, (0,0),fx=1/4, fy=1/4 )  # verify that it is, in fact an image
+        except Exception as e:
             print('Bad file:', filename)  # print out the names of corrupt files
             broken.append(filename)
 

@@ -24,7 +24,8 @@ class Images:
             self.xml_lst = glob(f"{path}/*.xml")
 
         if len(self.xml_lst) < 1:
-            warnings.warn(f"No .xml files found, assuming no bounding boxes for all images in folder {path}", SyntaxWarning)
+            warnings.warn(f"No .xml files found, assuming no bounding boxes for all images in folder {path}",
+                          SyntaxWarning)
             self.xml_lst = glob(f"{path}/*.JPG")
 
         self.lst = [f"{i[:-4]}.{format}" for i in self.xml_lst] if len(self.xml_lst) > 0 else glob(
@@ -85,19 +86,34 @@ def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
     # Initialize augmentation
     augmentation = iaa.Sequential([
         iaa.Sometimes(0.7, [
-            iaa.Affine(rotate=(0, 359))
+            iaa.Affine(rotate=(0, 359))  # Simulate rotation
         ]),
         iaa.Sometimes(0.5, [
-            iaa.Fliplr(p=1.)
+            iaa.Fliplr(p=1.)             # Simulate different angles
         ]),
         iaa.Sometimes(0.2, [
-            iaa.Flipud(p=1.)
+            iaa.Flipud(p=1.)             # Simulate different angles
         ]),
         iaa.Sometimes(0.5, [
-            iaa.GammaContrast(gamma=2.0)
+            iaa.GammaContrast(gamma=2.0)    # Simulate brightness
         ]),
         iaa.Sometimes(0.5, [
-            iaa.AdditiveGaussianNoise(10, 20)
+            iaa.AdditiveGaussianNoise(10, 20)   # Simulate distrubted image
+        ]),
+        iaa.Sometimes(0.3, [
+            iaa.Crop(percent=(0.10, 0.30), keep_size=True)  # Simulate sizes
+        ]),
+        iaa.Sometimes(0.1, [
+            iaa.imgcorruptlike.Fog(severity=3)          # simulate Fog
+        ]),
+        iaa.Sometimes(0.05, [
+            iaa.imgcorruptlike.Fog(severity=5)          # simulate even more fog
+        ]),
+        iaa.Sometimes(0.3, [
+            iaa.AddToBrightness((-50, 50))              # Simulate more bright enviroment snow?
+        ]),
+        iaa.Sometimes(0.1, [
+            iaa.Dropout(p=(0,0.2))                      # Simulate different noise type
         ])
     ])
 
@@ -137,7 +153,6 @@ def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
         new_image = augmentation(image=imgsource)
         aug_data = []
 
-
     return new_image, aug_data
 
 
@@ -153,7 +168,8 @@ def imageToGray(imgsource, imagename, txtdata, savepath, labelsavepath):
                 textfile.write(f"{classnum} {xcenter} {ycenter} {width} {height}")
                 textfile.write('\n')
     else:
-        warnings.warn(f"No bounding box data or label save path was given, saveing image without {newname}", UserWarning)
+        warnings.warn(f"No bounding box data or label save path was given, saveing image without {newname}",
+                      UserWarning)
 
 
 def testBoundingBoxes(imagepath, labelpath, N):
@@ -218,8 +234,8 @@ def main(position, img, savepath, labelsavepath, classlist, onlybird, N=1):
 if __name__ == "__main__":
     init()
     ## Parameters
-    savepath = "oneClassDataSet/images"
-    labelsavepath = "oneClassDataSet/labels"
+    savepath = "OneClassDataSet/images"
+    labelsavepath = "OneClassDataSet/labels"
     classlist = ['Duck', 'Cormorant', 'Heron;fa', 'Duck;fa', 'Goose', 'Cormorant;fa', 'Goose;fa', 'Swan;fa',
                  'Mute Swan', 'Seagull', 'Swan', 'Heron']
     path1 = "../images/*"

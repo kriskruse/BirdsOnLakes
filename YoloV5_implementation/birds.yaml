@@ -1,7 +1,6 @@
-train: ../dataset/images
-val:  ../dataset/images
-test: ../Structure/images/train
+train: ../oneClassDataSet/images
+val:  ../OneClassTestSet/images
 
-nc: 12
+
+nc: 1
 names: ['Bird']
-#names: ['Duck', 'Cormorant', 'Heron;fa', 'Duck;fa', 'Goose', 'Cormorant;fa', 'Goose;fa', 'Swan;fa', 'Mute Swan', 'Seagull', 'Swan', 'Heron']

@@ -1,7 +1,6 @@
 import cv2
 import os, shutil
 from glob import glob
-import imgaug as ia
 import imgaug.augmenters as iaa
 from random import randrange
 from bs4 import BeautifulSoup
@@ -14,6 +13,15 @@ import warnings
 
 
 class Images:
+    """
+    A simple datastructure that takes a path to a bunch of images of a given format.
+    Looks for XML files named the same as the images for labels
+
+    :key self.lst: List of all the images proper paths
+    :key self.xml_lst: List of all the xml files paths
+    :key self.size: Returns the length of self.lst
+    """
+
     def __init__(self, path, format='JPG'):
 
         if type(path) != str:
@@ -34,10 +42,18 @@ class Images:
         self.size = len(self.lst)
 
     def random(self):
+        """
+        :return: Random image from the image list
+        """
         return self.lst[randrange(0, self.size, 1)]
 
 
 def quaterSize(imgPath, savepath):
+    """
+    :param imgPath: Path to image
+    :param savepath: Path to save new image
+    :return: An image quatersize the original in openCV format
+    """
     QS_img = cv2.imread(imgPath)
     QS_img_quarter = cv2.resize(QS_img, (0, 0), fx=0.25, fy=0.25)
     cv2.imwrite(f"{savepath}/{imgPath[-12:-4]}.JPG", QS_img_quarter)
@@ -45,6 +61,15 @@ def quaterSize(imgPath, savepath):
 
 
 def xmlToTxt(xmlPath, labelsavepath, imagename, classlist, scale=1 / 4, onlybird=False):
+    """
+    :param xmlPath: Path to labels in XML form
+    :param labelsavepath: Path to save the labels
+    :param imagename: Filename of the image
+    :param classlist: List of classes
+    :param scale: Float: How the image was scaled compared to the original
+    :param onlybird: Boolean: If to use binary class system
+    :return: List: Returns the converted label data, Mainly for debugging
+    """
     if classlist is None:
         classlist = ['Duck', 'Cormorant', 'Heron;fa', 'Duck;fa', 'Goose', 'Cormorant;fa', 'Goose;fa', 'Swan;fa',
                      'Mute Swan', 'Seagull', 'Swan', 'Heron']
@@ -66,7 +91,7 @@ def xmlToTxt(xmlPath, labelsavepath, imagename, classlist, scale=1 / 4, onlybird
                 ymax = int(bs_data.contents[0].contents[i].contents[9].contents[7].contents[0]) * scale
             except:
                 break
-
+            # We can now calculate the 0 - 1 data that the model wants
             width = (xmax - xmin) / imagex
             height = (ymax - ymin) / imagey
             xcenter = ((xmax + xmin) / 2) / imagex
@@ -79,46 +104,57 @@ def xmlToTxt(xmlPath, labelsavepath, imagename, classlist, scale=1 / 4, onlybird
 
 
 def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
+    """
+    Data augmenter funtion, using imgaug
+    :param imgsource: The image source data pref loaded using opencv
+    :param imagename: Name of the image
+    :param txtdata: Converted label data (from xmlToTxt)
+    :param savepath: Path to save the augmented image
+    :param labelsavepath: Path to save the augmented label data
+    :return: array: augmented image data, list: augmented label data
+    """
     # Loading
     h, w, _ = imgsource.shape
     newname = f"{imagename}{randrange(100, 999, 1)}"
 
     # Initialize augmentation
+    # They are all chosen at random
     augmentation = iaa.Sequential([
         iaa.Sometimes(0.7, [
             iaa.Affine(rotate=(0, 359))  # Simulate rotation
         ]),
         iaa.Sometimes(0.5, [
-            iaa.Fliplr(p=1.)             # Simulate different angles
+            iaa.Fliplr(p=1.)  # Simulate different angles
         ]),
         iaa.Sometimes(0.2, [
-            iaa.Flipud(p=1.)             # Simulate different angles
+            iaa.Flipud(p=1.)  # Simulate different angles
         ]),
         iaa.Sometimes(0.5, [
-            iaa.GammaContrast(gamma=2.0)    # Simulate brightness
+            iaa.GammaContrast(gamma=2.0)  # Simulate brightness
         ]),
         iaa.Sometimes(0.5, [
-            iaa.AdditiveGaussianNoise(10, 20)   # Simulate distrubted image
+            iaa.AdditiveGaussianNoise(10, 20)  # Simulate distrubted image
         ]),
         iaa.Sometimes(0.3, [
             iaa.Crop(percent=(0.10, 0.30), keep_size=True)  # Simulate sizes
         ]),
         iaa.Sometimes(0.1, [
-            iaa.imgcorruptlike.Fog(severity=3)          # simulate Fog
+            iaa.imgcorruptlike.Fog(severity=3)  # simulate Fog
         ]),
         iaa.Sometimes(0.05, [
-            iaa.imgcorruptlike.Fog(severity=5)          # simulate even more fog
+            iaa.imgcorruptlike.Fog(severity=5)  # simulate even more fog
         ]),
         iaa.Sometimes(0.3, [
-            iaa.AddToBrightness((-50, 50))              # Simulate more bright enviroment snow?
+            iaa.AddToBrightness((-50, 50))  # Simulate more bright enviroment snow?
         ]),
         iaa.Sometimes(0.1, [
-            iaa.Dropout(p=(0,0.2))                      # Simulate different noise type
+            iaa.Dropout(p=(0, 0.2))  # Simulate different noise type
         ])
     ])
 
     if len(txtdata) > 0:
         # Data manipulation
+        # We convert the data back to x and y coordinates
         bboxes = []
         for obj in txtdata:
             classnum, xcenter, ycenter, width, height = obj
@@ -128,6 +164,7 @@ def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
             y2 = (ycenter + height / 2) * h
             bboxes.append(BoundingBox(x1, y1, x2, y2, label=classnum))
 
+        # We then calculate the new bounding boxes for the augmented image
         bbs = BoundingBoxesOnImage(bboxes, shape=imgsource.shape)
         new_image, new_bbs = augmentation(image=imgsource, bounding_boxes=bbs)
         # new_bbs = new_bbs.remove_out_of_image()
@@ -135,6 +172,7 @@ def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
         # Data Saving
         cv2.imwrite(f"{savepath}/{newname}.JPG", new_image)
 
+        # convert it back to the model specific data layout and save it to given path
         aug_data = []
         with open(f"{labelsavepath}/{newname}.txt", 'w') as textfile:
             for i in new_bbs.bounding_boxes:
@@ -157,10 +195,21 @@ def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
 
 
 def imageToGray(imgsource, imagename, txtdata, savepath, labelsavepath):
+    """
+    Converts image to grayscale.
+    :param imgsource: Loaded image with opencv
+    :param imagename: Name of image
+    :param txtdata: Label data in xmlToTxt format
+    :param savepath: Path to save image
+    :param labelsavepath: Path to save label
+    :return: None
+    """
+    # convert to grayscale
     gray = cv2.cvtColor(imgsource, cv2.COLOR_BGR2GRAY)
     newname = f"{imagename}{randrange(100, 999, 1)}"
     cv2.imwrite(f"{savepath}/{newname}.JPG", gray)
 
+    # save the label to the new image
     if len(txtdata) > 0 and len(labelsavepath) > 1:
         with open(f"{labelsavepath}/{newname}.txt", 'w') as textfile:
             for obj in txtdata:
@@ -173,11 +222,19 @@ def imageToGray(imgsource, imagename, txtdata, savepath, labelsavepath):
 
 
 def testBoundingBoxes(imagepath, labelpath, N):
+    """
+    Draws the bounding boxes from the label on the image, saves to new folder
+    :param imagepath: Path to images to test
+    :param labelpath: Path to labels matching images
+    :param N: How many to test, Does random sampling
+    :return: Debug data, image name and label data
+    """
     # Run a test on a random image
     # get the images data as our class and choose a random to test
     test = Images(imagepath, format='JPG')
     debug_data = []
 
+    # Random sampling
     for i in range(N):
         ranimage = test.random()
         im = cv2.imread(ranimage)
@@ -217,6 +274,19 @@ def testBoundingBoxes(imagepath, labelpath, N):
 
 
 def main(position, img, savepath, labelsavepath, classlist, onlybird, N=1):
+    """
+    Main is the runtimer, only to be used if the file itself is getting ran. Does a sequence of procedures to generate
+    an augmented data set.
+
+    :param position: Position for tqdm, 0 if not multithreading
+    :param img: Dataclass loaded with Image class
+    :param savepath: Path to save images
+    :param labelsavepath: Path to save Labels
+    :param classlist: Class list if any, else set to None
+    :param onlybird: Boolean: if True use binary class
+    :param N: How many augmented copies to generate
+    :return: None
+    """
     for i in tqdm(range(img.size), desc=f"Generating images on thread{position}", position=position, leave=True):
         imagepath = img.lst[i]
         xmlpath = img.xml_lst[i]
@@ -238,18 +308,23 @@ if __name__ == "__main__":
     labelsavepath = "OneClassDataSet/labels"
     classlist = ['Duck', 'Cormorant', 'Heron;fa', 'Duck;fa', 'Goose', 'Cormorant;fa', 'Goose;fa', 'Swan;fa',
                  'Mute Swan', 'Seagull', 'Swan', 'Heron']
+
+    # These are the locations we want to pull images from
     path1 = "../images/*"
     path2 = "../images2/*"
     path3 = "../images7/*"
     debugpath = "picked"
     paths = [path1, path2]
     # paths = [debugpath]
+
+    # Parameters specifying runtime settings
     threads = 24
     N = 95
     onlybird = True
-    delete = True
-    debug = False
+    delete = True  # Delete the old folders if any?
+    debug = False  # wether to run the debug function
 
+    # Delete old dataset if specified
     if delete:
         try:
             shutil.rmtree("oneClassDataSet")
@@ -257,14 +332,20 @@ if __name__ == "__main__":
         except:
             print()
 
+    # Check if the folders we want to save in exist, if not create them
     os.makedirs(savepath, exist_ok=True)
     os.makedirs(labelsavepath, exist_ok=True)
 
+    # we "load" the images we want to augment into the class
     img = Images(paths)
 
     # Split to threads
     N = N // threads
+    # This is not the smartes multithreading, but it is faster than nothing
+    # Every thread runs N/threads augment copies of each image.
+    # Could be done faster by smart allocating images to threads but I can't be bothered
     if not debug:
+        # Create threads
         for i in range(threads):
             locals()[f"t{i}"] = threading.Thread(target=main,
                                                  args=(i, img, savepath, labelsavepath, classlist, onlybird, N))
@@ -275,6 +356,7 @@ if __name__ == "__main__":
         for i in range(threads):
             locals()[f"t{i}"].join()
 
+        # Clear the prompt because tqdm leaves a mess
         os.system("cls")
         print("Generated all images")
         print("Running bounding box check")
@@ -296,12 +378,7 @@ if __name__ == "__main__":
         print("Please check the BoundingBoxCheck folder for bounding box validation")
         sleep(0.5)
 
-    else:
+    else:  # This is the debugging program
+        # We run only a selected few images through the system
         main(1, img, savepath, labelsavepath, classlist, onlybird, 1)
         print(testBoundingBoxes(savepath, labelsavepath, 10))
-
-    # make x amount of copies with different changes
-    # - image shifted right or left
-    # - Rotated at different angles
-    # - Color-modes, maybe greyscale?
-    # Combination of above.

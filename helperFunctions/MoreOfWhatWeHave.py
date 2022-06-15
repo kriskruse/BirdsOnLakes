@@ -135,21 +135,21 @@ def RotateImageAndData(imgsource, imagename, txtdata, savepath, labelsavepath):
         iaa.Sometimes(0.5, [
             iaa.AdditiveGaussianNoise(10, 20)  # Simulate distrubted image
         ]),
-        iaa.Sometimes(0.3, [
-            iaa.Crop(percent=(0.10, 0.30), keep_size=True)  # Simulate sizes
-        ]),
-        iaa.Sometimes(0.1, [
-            iaa.imgcorruptlike.Fog(severity=3)  # simulate Fog
-        ]),
-        iaa.Sometimes(0.05, [
-            iaa.imgcorruptlike.Fog(severity=5)  # simulate even more fog
-        ]),
-        iaa.Sometimes(0.3, [
-            iaa.AddToBrightness((-50, 50))  # Simulate more bright enviroment snow?
-        ]),
-        iaa.Sometimes(0.1, [
-            iaa.Dropout(p=(0, 0.2))  # Simulate different noise type
-        ])
+        # iaa.Sometimes(0.3, [
+        #     iaa.Crop(percent=(0.10, 0.30), keep_size=True)  # Simulate sizes
+        # ]),
+        # iaa.Sometimes(0.1, [
+        #     iaa.imgcorruptlike.Fog(severity=3)  # simulate Fog
+        # ]),
+        # iaa.Sometimes(0.05, [
+        #     iaa.imgcorruptlike.Fog(severity=5)  # simulate even more fog
+        # ]),
+        # iaa.Sometimes(0.3, [
+        #     iaa.AddToBrightness((-50, 50))  # Simulate more bright enviroment snow?
+        # ]),
+        # iaa.Sometimes(0.1, [
+        #     iaa.Dropout(p=(0, 0.2))  # Simulate different noise type
+        # ])
     ])
 
     if len(txtdata) > 0:
@@ -314,12 +314,13 @@ if __name__ == "__main__":
     path2 = "../images2/*"
     path3 = "../images7/*"
     debugpath = "picked"
-    paths = [path1, path2]
-    # paths = [debugpath]
+    # paths = [path1, path2]
+    # paths = [path3]
+    paths = [debugpath]
 
     # Parameters specifying runtime settings
-    threads = 24
-    N = 95
+    threads = 1
+    N = 3
     onlybird = True
     delete = True  # Delete the old folders if any?
     debug = False  # wether to run the debug function

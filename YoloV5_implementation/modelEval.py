@@ -20,20 +20,20 @@ for p in path_org:
     img_org.append(Image.open(p))
 
 # inference
-res_best = mod_best(img_org, size=1008)
-res_last = mod_last(img_org, size=1008)
+res_best = mod_best(images, size=1008)
+# res_last = mod_last(images, size=1008)
 # res_best_B = mod_best(img_org, size=4032)
 # res_last_B = mod_last(img_org, size=4032)
 
 # Results
 res_best.print()
 # os.makedirs("../testresults", exist_ok=True)
-# res_best.show()
+res_best.show()
 
-res_last.print()
+# res_last.print()
 # res_last.show()
 
 print(res_best.pandas().xyxy)  # im1 predictions (pandas)
-print(res_last.pandas().xyxy)
+# print(res_last.pandas().xyxy)
 # print(results.pandas().xyxy[1])
 # print(results.pandas().xyxy[2])

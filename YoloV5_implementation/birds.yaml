@@ -1,4 +1,4 @@
-train: ../oneClassDataSet/images
+train: ../OneClassDataSet/images
 val:  ../OneClassTestSet/images
 
 
